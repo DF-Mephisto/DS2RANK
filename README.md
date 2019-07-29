@@ -1,5 +1,5 @@
 # DS2RANK
-A utility for Dark Soul II made to help players to get various useful information about their enemies and covenants which can't be obtained via ingame means.
+A utility for Dark Souls II made to help players to get various useful information about their enemies and covenants which can't be obtained via ingame means.
 
 ### Link to the NexusMods:
 https://www.nexusmods.com/darksouls2/mods/679
