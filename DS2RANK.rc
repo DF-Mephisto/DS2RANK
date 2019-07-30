@@ -1,6 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
-#include "resource4.h"
+#include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ IDRES_DLL				RES						L"DS2Overlay.dll"
 DLG DIALOG 20, 20, 160, 35
 STYLE WS_VISIBLE | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
 CAPTION "Additional Information"
-CLASS "OtherProc"
+CLASS "AddInfoClass"
 BEGIN
 END
 
