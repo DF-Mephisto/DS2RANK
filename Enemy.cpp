@@ -22,8 +22,8 @@ Enemy::Enemy() {
 	Intelligence = 0;
 	Faith = 0;
 
-	for (int i = 0; i < 10; i++) Spells[i] = 0;
-	for (int i = 0; i < 10; i++) Cons[i] = 0;
+	memset(Spells, NULL, sizeof(Spells));
+	memset(Spells, NULL, sizeof(Cons));
 
 	for (int i = 0; i < 14; i++) Counts[i] = 1;
 }
