@@ -1,7 +1,9 @@
 #pragma once
 
+#include "AddInfoWndProc.h"
+#include "PlayerDataWndProc.h"
 #include "MemReader.h"
-#include "resource4.h"
+#include "resource.h"
 #include "Source.h"
 #include "IDs.h"
 
@@ -14,9 +16,7 @@
 using namespace std;
 using namespace Gdiplus;
 
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-LRESULT CALLBACK ChildWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-LRESULT CALLBACK OtherProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 HINSTANCE hInst;
 Trainer ReadRank;
@@ -27,7 +27,7 @@ vector<Enemy> statisticWorld;
 HWND OtherInf;
 HFONT hfont;
 
-StatisticsType StatType = emptyStat;
+StatisticsType StatType;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -42,25 +42,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WindowProc;
+	wc.lpfnWndProc = MainWndProc;
 	wc.hInstance = hInstance;
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
 	wc.hIconSm = (HICON)LoadImage(GetModuleHandle(0), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE);
-	wc.lpszClassName = "WindowClass";
+	wc.lpszClassName = "MainWndClass";
 	RegisterClassEx(&wc);
 
 	wc.cbWndExtra = DLGWINDOWEXTRA;
-	wc.lpfnWndProc = OtherProc;
-	wc.lpszClassName = "OtherProc";
+	wc.lpfnWndProc = AddInfoWndProc;
+	wc.lpszClassName = "AddInfoWndClass";
 	RegisterClassEx(&wc);
 
 	wc.cbWndExtra = 0;
-	wc.lpfnWndProc = ChildWindowProc;
+	wc.lpfnWndProc = PlayerDataWndProc;
 	wc.hIconSm = NULL;
-	wc.lpszClassName = "ChildWindowClass";
+	wc.lpszClassName = "PlayerDataWndClass";
 	RegisterClassEx(&wc);
 
-	HWND hWnd = CreateWindow("WindowClass", "DS2RANK v.4.2", WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, (GetSystemMetrics(SM_CXSCREEN) / 2) - 300, (GetSystemMetrics(SM_CYSCREEN) / 2) - 300, 764, 688, 0, 0, hInstance, 0);
+	HWND hWnd = CreateWindow("MainWndClass", "DS2RANK v.4.2", WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, (GetSystemMetrics(SM_CXSCREEN) / 2) - 300, (GetSystemMetrics(SM_CYSCREEN) / 2) - 300, 764, 688, 0, 0, hInstance, 0);
 	ShowWindow(hWnd, nCmdShow);
 
 	MSG msg;
@@ -75,7 +75,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	return (int)msg.wParam;
 }
 
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HDC			hDC;
 	HDC			hCompatibleDC;
@@ -84,7 +84,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	POINT			pt;
 
 	static bool		recordStage;
-	static HWND		label;
+	static HWND		DataWnd;
 	static HWND		StartBTN, BloodBTN, WorldBTN, AdditionBTN;
 	static HBITMAP		hBmp;
 	static Image		*procON, *procOFF, *procAct;
@@ -99,6 +99,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_CREATE:
 	{
 					  FillIDs();
+					  OtherInf = 0;
+					  StatType = emptyStat;
 
 					  RCstage = new int[PLAYERCOUNT];
 					  ClearData(RCstage, PLAYERCOUNT);
@@ -125,7 +127,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 					  SendMessage(WorldBTN, WM_SETFONT, (WPARAM)hfont, 0);
 					  SendMessage(AdditionBTN, WM_SETFONT, (WPARAM)hfont, 0);
 
-					  label = CreateWindow("ChildWindowClass", NULL, WS_CHILDWINDOW | WS_VISIBLE | WS_DLGFRAME | WS_VSCROLL | WS_CLIPCHILDREN, 10, 273, 500, 364, hWnd, (HMENU)ID_STATWINDOW, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);					 
+					  DataWnd = CreateWindow("PlayerDataWndClass", NULL, WS_CHILDWINDOW | WS_VISIBLE | WS_DLGFRAME | WS_VSCROLL | WS_CLIPCHILDREN, 10, 273, 500, 364, hWnd, (HMENU)ID_STATWINDOW, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);					 
 
 					  wcscpy_s(MyDocFolder, GetFolderPath());
 					  LoadFile(&statistic, &statisticWorld, MyDocFolder);
@@ -198,18 +200,18 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 						  case ID_BLOODSTAT:
 						  {
-							   DestroyWindow(label);
+							   DestroyWindow(DataWnd);
 							   StatType = bloodStat;
-							   label = CreateWindow("ChildWindowClass", NULL, WS_CHILDWINDOW | WS_VISIBLE | WS_DLGFRAME | WS_VSCROLL | WS_CLIPCHILDREN, 10, 273, 500, 364, hWnd, (HMENU)ID_STATWINDOW, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+							   DataWnd = CreateWindow("PlayerDataWndClass", NULL, WS_CHILDWINDOW | WS_VISIBLE | WS_DLGFRAME | WS_VSCROLL | WS_CLIPCHILDREN, 10, 273, 500, 364, hWnd, (HMENU)ID_STATWINDOW, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
 
 							   break;
 						   }
 
 						   case ID_WORLDSTAT:
 						   {
-							   DestroyWindow(label);
+							   DestroyWindow(DataWnd);
 							   StatType = worldStat;
-							   label = CreateWindow("ChildWindowClass", NULL, WS_CHILDWINDOW | WS_VISIBLE | WS_DLGFRAME | WS_VSCROLL | WS_CLIPCHILDREN, 10, 273, 500, 364, hWnd, (HMENU)ID_STATWINDOW, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+							   DataWnd = CreateWindow("PlayerDataWndClass", NULL, WS_CHILDWINDOW | WS_VISIBLE | WS_DLGFRAME | WS_VSCROLL | WS_CLIPCHILDREN, 10, 273, 500, 364, hWnd, (HMENU)ID_STATWINDOW, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
 
 							   break;
 						   }
@@ -239,8 +241,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEWHEEL:
 	{
 		if (StatType != emptyStat) {
-			if (GET_WHEEL_DELTA_WPARAM(wParam) > 0) SendMessage(label, WM_VSCROLL, SB_LINEUP, 0);
-			if (GET_WHEEL_DELTA_WPARAM(wParam) < 0) SendMessage(label, WM_VSCROLL, SB_LINEDOWN, 0);
+			if (GET_WHEEL_DELTA_WPARAM(wParam) > 0) SendMessage(DataWnd, WM_VSCROLL, SB_LINEUP, 0);
+			if (GET_WHEEL_DELTA_WPARAM(wParam) < 0) SendMessage(DataWnd, WM_VSCROLL, SB_LINEDOWN, 0);
 		}
 		return 0;
 	}
@@ -261,302 +263,5 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	}
 
 	}
-	return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
-LRESULT CALLBACK ChildWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam){
-
-	HDC			hDC;
-	HDC			hCompatibleDC;
-	PAINTSTRUCT		ps;
-	RECT			Rect;
-	POINT			pt;
-	
-	static int		scrollPosY, scrollPosYprev;
-	static bool		PlayerWindow;
-	static HBITMAP		hBmp;
-	static vector<Enemy>*	stats;
-
-	static HWND		ReturnBtn;
-	static HWND*		ListBtn;
-	static HWND*		DataBtn;
-	static Enemy		target;
-
-	static int*		Counts;
-	static int*		equipPosY;
-
-	static Image		*Background;
-
-	switch (message){
-	case WM_CREATE:
-	{
-		CreateListBtn(&ListBtn, hWnd, hInst);
-		CreateDataBtn(&DataBtn, hWnd, hInst);
-		ReturnBtn = CreateWindow("button", "...", WS_CHILD | BS_PUSHBUTTON, X_RET_BTN, Y_BTN_START_POS, XRET_SZ, YRET_SZ, hWnd, (HMENU)ID_RETURNBTN, hInst, NULL);
-		
-		if (StatType == bloodStat)
-		{
-			stats = &statistic;
-			Background = LoadGdiImage(MAKEINTRESOURCE(IDB_ARENA), "JPG", hInst);
-		}
-		else if (StatType == worldStat)
-		{
-			stats = &statisticWorld;
-			Background = LoadGdiImage(MAKEINTRESOURCE(IDB_WORLD), "JPG", hInst);
-		}
-		else if (StatType == emptyStat)
-		{
-			Background = LoadGdiImage(MAKEINTRESOURCE(IDB_ARENA), "JPG", hInst);
-		}
-
-		scrollPosY = (StatType == emptyStat) ? 0 : stats->size() <= ENTRYCOUNT ? 0 : stats->size() - ENTRYCOUNT;
-		scrollPosYprev = 0;
-		if (StatType == emptyStat) SetScrollRange(hWnd, SB_VERT, 0, 0, TRUE);
-		else
-		{
-			ShowListBtn(ListBtn, stats);
-			SetScrollRange(hWnd, SB_VERT, 0, stats->size() <= ENTRYCOUNT ? 0 : stats->size() - ENTRYCOUNT, TRUE);
-			SetScrollPos(hWnd, SB_VERT, scrollPosY, TRUE);
-		}
-
-		PlayerWindow = false;
-
-		Counts = new int[EQUIPCOUNT];
-		equipPosY = new int[EQUIPCOUNT];
-		ClearData(Counts, EQUIPCOUNT);
-		FillequipPosY(equipPosY);
-
-		return 0;
-	}
-
-	case WM_PAINT:
-	{
-					 hDC = BeginPaint(hWnd, &ps);
-					 GetWindowRect(hWnd, &Rect);
-					 pt.x = Rect.right;
-					 pt.y = Rect.bottom;
-					 ScreenToClient(hWnd, &pt);
-
-					 hCompatibleDC = CreateCompatibleDC(hDC);
-					 SelectObject(hCompatibleDC, hfont);
-					 hBmp = CreateCompatibleBitmap(hDC, pt.x, pt.y);
-					 SelectObject(hCompatibleDC, hBmp);
-					 PatBlt(hCompatibleDC, 0, 0, pt.x, pt.y, PATCOPY);
-					 
-					 Graphics graph(hCompatibleDC);
-					 graph.SetSmoothingMode(SmoothingModeNone);
-					 graph.DrawImage(Background, 0, 0, 500, 364);
-
-					 SetBkMode(hCompatibleDC, TRANSPARENT);
-					 SetTextColor(hCompatibleDC, RGB(0xE0, 0xE0, 0xE0));
-
-					 if (StatType != emptyStat)
-					 {
-						 if (PlayerWindow == false)
-						 {
-							 ShowListBtn(ListBtn, stats);
-							 DrawPlayerList(hCompatibleDC, stats, scrollPosY, StatType);
-						 }
-						 else
-						 {
-							 ShowDataBtn(DataBtn, &target, equipPosY, scrollPosY);
-							 DrawPlayerData(hCompatibleDC, &target, Counts, scrollPosY);
-						 }
-					 }
-
-					 BitBlt(hDC, 0, 0, pt.x, pt.y, hCompatibleDC, 0, 0, SRCCOPY);
-					 DeleteObject(hBmp);
-					 DeleteDC(hCompatibleDC);
-					 EndPaint(hWnd, &ps);
-					 return 0;
-	}
-
-	case WM_VSCROLL:
-	{
-		int MaxScroll = PlayerWindow ? STATCOUNT - ENTRYCOUNT : stats->size() - ENTRYCOUNT;
-
-		switch (LOWORD(wParam))
-		{
-
-		case SB_THUMBTRACK:
-		{
-			scrollPosY = HIWORD(wParam);
-			break;
-		}
-
-		case SB_LINEDOWN:
-		{
-			if (scrollPosY < MaxScroll) {
-				scrollPosY++;
-			}
-			break;
-		}
-
-		case SB_LINEUP:
-		{
-			if (scrollPosY > 0) {
-				scrollPosY--;
-			}
-			break;
-		}
-
-		case SB_PAGEDOWN:
-		{
-			if (scrollPosY < MaxScroll) {
-				scrollPosY++;
-			}
-			break;
-		}
-
-		case SB_PAGEUP:
-		{
-			if (scrollPosY > 0) {
-				scrollPosY--;
-			}
-			break;
-		}
-
-		}
-
-		SetScrollRange(hWnd, SB_VERT, 0, MaxScroll, TRUE);
-		SetScrollPos(hWnd, SB_VERT, scrollPosY, TRUE);
-		InvalidateRect(hWnd, NULL, FALSE);
-
-		return 0;
-	}
-
-	case WM_COMMAND:
-	{
-		int ID = LOWORD(wParam);
-
-		//LIST BUTTONS
-		if( ID >= 0 && ID < ENTRYCOUNT)
-		{
-				HideBtn(ListBtn, ENTRYCOUNT);
-				ShowWindow(ReturnBtn, SW_SHOW);
-
-				int playerNumber = scrollPosY + LOWORD(wParam);
-				target = (*stats)[playerNumber];
-				PlayerWindow = true;
-
-				scrollPosYprev = scrollPosY;
-				scrollPosY = 0;
-				SetScrollRange(hWnd, SB_VERT, 0, STATCOUNT - ENTRYCOUNT, TRUE);
-				SetScrollPos(hWnd, SB_VERT, scrollPosY, TRUE);
-				InvalidateRect(hWnd, NULL, FALSE);
-		}
-
-		//EQUIP DATA BUTTONS
-		if (ID >= ENTRYCOUNT && ID < ENTRYCOUNT * 2 + ENTRYCOUNT )
-		{
-				ChangeEquipCount(wParam, &target, equipPosY, Counts, scrollPosY);
-				InvalidateRect(hWnd, NULL, FALSE);
-		}
-
-		//OTHER BUTTONS
-		switch(ID)
-		{
-			case ID_RETURNBTN:
-			{
-				HideBtn(DataBtn, ENTRYCOUNT * 2);
-				ShowWindow(ReturnBtn, SW_HIDE);
-
-				PlayerWindow = false;
-				ClearData(Counts, EQUIPCOUNT);
-
-				scrollPosY = scrollPosYprev;
-				SetScrollRange(hWnd, SB_VERT, 0, stats->size() <= ENTRYCOUNT ? 0 : stats->size() - ENTRYCOUNT, TRUE);
-				SetScrollPos(hWnd, SB_VERT, scrollPosY, TRUE);
-				InvalidateRect(hWnd, NULL, FALSE);
-
-				break;
-			}
-		}
-
-		return 0;
-	}
-
-	case WM_DESTROY:
-	{
-		delete[] Counts;
-		delete[] equipPosY;
-		delete Background;
-
-		DestroyBtn(ListBtn, ENTRYCOUNT);
-		DestroyBtn(DataBtn, ENTRYCOUNT * 2);
-		DestroyWindow(ReturnBtn);
-
-		return 0;
-	}
-
-	}
-
-	return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
-LRESULT CALLBACK OtherProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	HDC 		hDC, hCompDC;
-	PAINTSTRUCT 	ps;
-	RECT 		rect;
-	HBITMAP 	bmpBack;
-
-	static 		Image* Background;
-	
-	switch (message)
-	{
-	case WM_CREATE:
-	{
-		MoveWindow(hWnd, GetSystemMetrics(SM_CXSCREEN) / 2 - 190, GetSystemMetrics(SM_CYSCREEN) / 2 - 65, 400, 130, false);
-		Background = LoadGdiImage(MAKEINTRESOURCE(OTHERBACK_PNG), "PNG", hInst);
-
-		return 0;
-	}
-
-	case WM_PAINT:
-	{
-					hDC = BeginPaint(hWnd, &ps);
-					GetWindowRect(hWnd, &rect);
-					hCompDC = CreateCompatibleDC(hDC);
-					bmpBack = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
-					SelectObject(hCompDC, bmpBack);
-					PatBlt(hCompDC, 0, 0, rect.right, rect.bottom, PATCOPY);
-
-					Graphics graph(hCompDC);
-					graph.DrawImage(Background, 0, 0, 400, 600);
-
-					SelectObject(hCompDC, hfont);
-					SetTextColor(hCompDC, RGB(0xE0, 0xE0, 0xE0));
-					SetBkMode(hCompDC, TRANSPARENT);
-
-					string tempstr;
-					tempstr = "You have killed hosts for getting Ring of Thorns: " + to_string(ReadRank.GetRingStat(THORN_offset));
-					TextOut(hCompDC, 5, 5, tempstr.c_str(), tempstr.length());
-
-					tempstr = "You have killed invader dark phantoms for getting";
-					TextOut(hCompDC, 5, 40, tempstr.c_str(), tempstr.length());
-
-					tempstr = "Lingering Dragoncrest Ring: " + to_string(ReadRank.GetRingStat(DRAGONCREST_offset));
-					TextOut(hCompDC, 5, 60, tempstr.c_str(), tempstr.length());
-						
-					
-					BitBlt(hDC, 0, 0, rect.right, rect.bottom, hCompDC, 0, 0, SRCCOPY);
-
-					EndPaint(hWnd, &ps);
-					DeleteDC(hCompDC);
-					DeleteObject(bmpBack);
-					return 0;
-	}
-
-	case WM_DESTROY:
-	{
-		delete Background;
-		OtherInf = 0;
-
-		return 0;
-	}
-
-	}
-
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
