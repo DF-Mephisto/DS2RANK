@@ -230,12 +230,24 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 	case WM_TIMER:
 	{	
-					 Statistic(0x1e8, 0x234, RCstage[0], 0, &statistic, &statisticWorld, &ReadRank);
-					 Statistic(0x2b8, 0x304, RCstage[1], 1, &statistic, &statisticWorld, &ReadRank);
-					 Statistic(0x388, 0x3d4, RCstage[2], 2, &statistic, &statisticWorld, &ReadRank);
-					 Statistic(0x458, 0x4a4, RCstage[3], 3, &statistic, &statisticWorld, &ReadRank);
-					 Statistic(0x528, 0x574, RCstage[4], 4, &statistic, &statisticWorld, &ReadRank);
-					 return 0;
+		if (!ReadRank.GetProcessStatus())
+		{
+			recordStage = false;
+			BGCUR = BGOFF;
+			procAct = procOFF;
+			SetWindowText(StartBTN, "Start");
+			KillTimer(hWnd, 1);
+			for (int i = 0; i < 5; i++) RCstage[i] = 0;
+			InvalidateRect(hWnd, NULL, FALSE);
+			return 0;
+		}
+		
+		Statistic(0x1e8, 0x234, RCstage[0], 0, &statistic, &statisticWorld, &ReadRank);
+		Statistic(0x2b8, 0x304, RCstage[1], 1, &statistic, &statisticWorld, &ReadRank);
+		Statistic(0x388, 0x3d4, RCstage[2], 2, &statistic, &statisticWorld, &ReadRank);
+		Statistic(0x458, 0x4a4, RCstage[3], 3, &statistic, &statisticWorld, &ReadRank);
+		Statistic(0x528, 0x574, RCstage[4], 4, &statistic, &statisticWorld, &ReadRank);
+		return 0;
 	}
 
 	case WM_MOUSEWHEEL:
