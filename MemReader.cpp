@@ -61,6 +61,14 @@ HANDLE Trainer::OpenProc() {
 	return pHandle;
 }
 
+bool Trainer::GetProcessStatus()
+{
+	DWORD exitCode = 0;
+	GetExitCodeProcess(pHandle, &exitCode);
+
+	return exitCode == STILL_ACTIVE ? true : false;
+}
+
 bool Trainer::CloseProc() {
 	if (CloseHandle(pHandle))
 	{
