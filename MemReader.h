@@ -20,6 +20,7 @@ public:
 	bool GetProcess();
 	bool CloseProc();
 	bool GetSotFS();
+	bool GetProcessStatus();
 	MODULEENTRY32 GetModule();
 	HANDLE OpenProc();
 	void LoadOverlay();
