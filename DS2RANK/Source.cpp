@@ -639,46 +639,35 @@ void decryptStr(wstring* str)
 
 void LoadData(LPCSTR Res, LPCSTR type, HINSTANCE hInst, wstring name)
 {
-	PWSTR MyDoc = new wchar_t[MAX_PATH];
-	wchar_t path[MAX_PATH];
+	PWSTR docFolderPath;
+	SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_DEFAULT, NULL, &docFolderPath);
 
-	SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_DEFAULT, NULL, &MyDoc);
-	wcscpy_s(path, MyDoc);
-	wcscat_s(path, L"\\DS2RANK");
-	//wcscat_s(FontVS, L"\\name.vs");
-	wcscat_s(path, name.c_str());
+	wstring ds2rankPath = docFolderPath;
+	ds2rankPath += L"\\DS2RANK"; 
+	ds2rankPath += name.c_str();
 
-	delete[] MyDoc;
-	
 	//Load Res
 	HRSRC hResInfo;
 	HANDLE memRes;
 	HGLOBAL hRes;
 	DWORD resSize;
-	void* pBuffer;
-	HGLOBAL m_hBuffer;
 
 	hResInfo = FindResource(hInst, Res, type);
 	hRes = LoadResource(hInst, hResInfo);
 	memRes = LockResource(hRes);
 	resSize = SizeofResource(hInst, hResInfo);
-	m_hBuffer = GlobalAlloc(GMEM_MOVEABLE, resSize);
-	pBuffer = GlobalLock(m_hBuffer);
-	CopyMemory(pBuffer, memRes, resSize);
 
 	//Write Res
-	fstream StatFile;
-	StatFile.open(path, ios::out | ios::binary);
-	if (StatFile.is_open()) {
-		StatFile.write((char*)pBuffer, resSize);
-		StatFile.close();
-	}	
+	fstream file;
+	file.open(ds2rankPath.c_str(), ios::out | ios::binary);
+	if (file.is_open()) {
+		file.write((char*)memRes, resSize);
+		file.close();
+	}
 
 	//Release Res
-	UnlockResource(hRes);
+	UnlockResource(memRes);
 	FreeResource(hRes);
-	GlobalUnlock(m_hBuffer);
-	GlobalFree(m_hBuffer);
 }
 
 //DRAW FUNCTIONS
