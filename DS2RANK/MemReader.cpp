@@ -130,8 +130,8 @@ void Trainer::LoadOverlay()
 	//CHECK LOADED DLL
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pID);
 	MODULEENTRY32 mInfo;
-
 	mInfo.dwSize = sizeof(MODULEENTRY32);
+
 	if (Module32First(snapshot, &mInfo)) {
 		do {
 			if (!strcmp("DS2Overlay.dll", mInfo.szModule)) {
@@ -143,29 +143,23 @@ void Trainer::LoadOverlay()
 	CloseHandle(snapshot);
 
 	//GET PATH
-	PWSTR MyDoc = new wchar_t[MAX_PATH];
-	wchar_t MyDocFolder[MAX_PATH];
-	char path[MAX_PATH];
-	ZeroMemory(path, MAX_PATH);
-
-	SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_DEFAULT, NULL, &MyDoc);
-	wcscpy_s(MyDocFolder, MyDoc);
-	wcscat_s(MyDocFolder, L"\\DS2RANK");
-	wcscat_s(MyDocFolder, L"\\DS2Overlay.dll");
-	
-	locale old = locale::global(locale(""));
-	wcstombs(path, MyDocFolder, MAX_PATH);
-	locale::global(old);
+	PWSTR docFolderPath;
+	SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_DEFAULT, NULL, &docFolderPath);
+	wstring dllPath = docFolderPath;
+	dllPath += L"\\DS2RANK\\DS2Overlay.dll";
 	
 	HANDLE Thread;
 	HMODULE ll = GetModuleHandle("kernel32.dll");
+	
+	LPVOID func = GetProcAddress(ll, "LoadLibraryW");
+	LPVOID arg_address;
+	if (arg_address = VirtualAllocEx(pHandle, 0, dllPath.length() * 2 + 2, MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+		arg_address = VirtualAllocEx(pHandle, arg_address, dllPath.length() * 2 + 2, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	else
+		return;
 
-	LPVOID func = GetProcAddress(ll, "LoadLibraryA");
-	LPVOID arg_address = (LPVOID)VirtualAllocEx(pHandle, 0, strlen(path), MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	WriteProcessMemory(pHandle, (LPVOID)arg_address, path, strlen(path), 0);
+	WriteProcessMemory(pHandle, (LPVOID)arg_address, (LPVOID)dllPath.c_str(), dllPath.length() * 2 + 2, 0);
 	Thread = CreateRemoteThread(pHandle, 0, 0, (LPTHREAD_START_ROUTINE)func, arg_address, 0, 0);
-
-	delete MyDoc;
 }
 
 short int Trainer::GetRingStat(DWORD32 type)

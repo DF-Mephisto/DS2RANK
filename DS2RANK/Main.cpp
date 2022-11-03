@@ -61,7 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wc.lpszClassName = "PlayerDataWndClass";
 	RegisterClassEx(&wc);
 
-	HWND hWnd = CreateWindow("MainWndClass", "DS2RANK v.4.2", WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, (GetSystemMetrics(SM_CXSCREEN) / 2) - 300, (GetSystemMetrics(SM_CYSCREEN) / 2) - 300, 764, 688, 0, 0, hInstance, 0);
+	HWND hWnd = CreateWindow("MainWndClass", "DS2RANK v.4.3", WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, (GetSystemMetrics(SM_CXSCREEN) / 2) - 300, (GetSystemMetrics(SM_CYSCREEN) / 2) - 300, 764, 688, 0, 0, hInstance, 0);
 	ShowWindow(hWnd, nCmdShow);
 
 	MSG msg;
