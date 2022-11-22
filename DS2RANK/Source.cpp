@@ -161,28 +161,13 @@ void Statistic(int offsetP, int offsetName, int& RCstage, int player, vector<Ene
 }
 wstring GetDate()
 {
-	time_t tim = time(NULL);
+	time_t t = time(NULL);
 	tm tms;
-	localtime_s(&tms, &tim);
+	localtime_s(&tms, &t);
 
-	wstring day;
-	wstring month;
-	wstring hour;
-	wstring min;
-
-	if (tms.tm_mday < 10) day = L"0" + to_wstring(tms.tm_mday);
-	else day = to_wstring(tms.tm_mday);
-
-	if (tms.tm_mon < 9) month = L"0" + to_wstring(tms.tm_mon + 1);
-	else month = to_wstring(tms.tm_mon + 1);
-
-	if (tms.tm_hour < 10) hour = L"0" + to_wstring(tms.tm_hour);
-	else hour = to_wstring(tms.tm_hour);
-
-	if (tms.tm_min < 10) min = L"0" + to_wstring(tms.tm_min);
-	else min = to_wstring(tms.tm_min);
-
-	wstring date = day + L"." + month + L"." + to_wstring(tms.tm_year % 100) + L"___" + hour + L":" + min;
+	wchar_t date[80];
+	swprintf_s(date, 79, L"%02d.%02d.%02d___%02d:%02d", 
+		tms.tm_mday, tms.tm_mon + 1, tms.tm_year % 100, tms.tm_hour, tms.tm_min);
 	return date;
 }
 void GetMainData(Enemy* cur, Trainer* ReadRank)
