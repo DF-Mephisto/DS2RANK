@@ -166,7 +166,7 @@ wstring GetDate()
 	localtime_s(&tms, &t);
 
 	wchar_t date[80];
-	swprintf_s(date, 79, L"%02d.%02d.%02d___%02d:%02d", 
+	swprintf_s(date, 80, L"%02d.%02d.%02d___%02d:%02d", 
 		tms.tm_mday, tms.tm_mon + 1, tms.tm_year % 100, tms.tm_hour, tms.tm_min);
 	return date;
 }
